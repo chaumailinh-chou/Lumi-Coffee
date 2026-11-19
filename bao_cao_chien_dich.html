@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Báo cáo chiến dịch</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f6f4ef;
+    --surface: #fffefb;
+    --text-1: #1b1a17;
+    --text-2: #55534d;
+    --muted: #8b8880;
+    --grid: #e6e3da;
+    --axis: #c9c6bb;
+    --border: rgba(27,26,23,0.09);
+    --accent: #7a4a2b;
+    --accent-soft: #f1e6dc;
+    --good: #0f7a32;
+    --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(60,40,20,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #11100f; --surface: #1c1b19; --text-1: #f0efec; --text-2: #c3c2b7; --muted: #8f8c84;
+      --grid: #2c2b28; --axis: #3a3935; --border: rgba(255,255,255,0.09);
+      --accent: #e0a77d; --accent-soft: #2e241c; --good: #3ccf6a;
+      --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+      --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #11100f; --surface: #1c1b19; --text-1: #f0efec; --text-2: #c3c2b7; --muted: #8f8c84;
+    --grid: #2c2b28; --axis: #3a3935; --border: rgba(255,255,255,0.09);
+    --accent: #e0a77d; --accent-soft: #2e241c; --good: #3ccf6a;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+    --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--text-1);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 32px 16px 56px; }
+
+  /* Header */
+  .hero {
+    background: linear-gradient(135deg, #3b2416 0%, #7a4a2b 55%, #b5774a 100%);
+    color: #fff; border-radius: 20px; padding: 32px 32px 28px; position: relative; overflow: hidden;
+  }
+  .hero::after {
+    content: ""; position: absolute; right: -60px; top: -60px; width: 260px; height: 260px;
+    border-radius: 50%; background: rgba(255,255,255,.07);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: .02em; opacity: .95; }
+  .logo { width: 34px; height: 34px; border-radius: 10px; background: #fff; color: #7a4a2b;
+          display: grid; place-items: center; font-weight: 800; font-size: 18px; }
+  .hero h1 { margin: 18px 0 6px; font-size: clamp(24px, 4vw, 34px); line-height: 1.2; }
+  .hero p { margin: 0; opacity: .85; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .chip { background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.2);
+          padding: 4px 12px; border-radius: 999px; font-size: 13px; }
+  .toolbar { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; position: relative; z-index: 1; }
+  .btn { font: inherit; font-size: 13px; cursor: pointer; border-radius: 10px; padding: 7px 14px;
+         border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.12); color: #fff; }
+  .btn:hover { background: rgba(255,255,255,.22); }
+
+  /* KPI */
+  .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin: 22px 0; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+         padding: 16px 18px; box-shadow: var(--shadow); }
+  .kpi .lbl { color: var(--text-2); font-size: 13px; }
+  .kpi .val { font-size: 26px; font-weight: 700; margin-top: 4px; letter-spacing: -.01em; }
+  .kpi .sub { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .kpi .sub b { color: var(--good); font-weight: 600; }
+
+  /* Cards */
+  .grid2 { display: grid; grid-template-columns: 1.15fr .85fr; gap: 18px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+          padding: 20px 22px; box-shadow: var(--shadow); margin-bottom: 18px; min-width: 0; }
+  .card h2 { margin: 0; font-size: 17px; }
+  .card .desc { margin: 2px 0 12px; color: var(--text-2); font-size: 13.5px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--text-2); margin-bottom: 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+  .chart { position: relative; width: 100%; }
+  .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart text { font-family: inherit; }
+
+  /* Insights */
+  .insights { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .ins { background: var(--accent-soft); border-radius: 14px; padding: 14px 16px; }
+  .ins .t { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); font-weight: 700; }
+  .ins .d { margin-top: 4px; font-size: 14.5px; }
+
+  /* Table */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 640px; }
+  th, td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; }
+  th { color: var(--text-2); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+  th:first-child, td:first-child { text-align: left; }
+  tfoot td { font-weight: 700; border-bottom: none; }
+  tbody tr:hover { background: var(--accent-soft); }
+
+  /* Tooltip */
+  .tip { position: fixed; pointer-events: none; z-index: 10; background: var(--surface); color: var(--text-1);
+         border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; font-size: 13px;
+         box-shadow: 0 8px 28px rgba(0,0,0,.16); opacity: 0; transition: opacity .12s; min-width: 190px; }
+  .tip .h { font-weight: 700; margin-bottom: 6px; }
+  .tip .r { display: flex; justify-content: space-between; gap: 14px; align-items: center; }
+  .tip .r span:first-child { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); }
+  .tip .tot { border-top: 1px solid var(--grid); margin-top: 6px; padding-top: 6px; font-weight: 700; }
+
+  footer { color: var(--muted); font-size: 12.5px; text-align: center; margin-top: 12px; }
+
+  @media (max-width: 900px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .grid2, .insights { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px) {
+    .hero { padding: 24px 20px; }
+    .kpi .val { font-size: 22px; }
+    .card { padding: 16px; }
+  }
+  @media print {
+    body { background: #fff; }
+    .toolbar { display: none; }
+    .card, .kpi { box-shadow: none; break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="brand"><div class="logo">L</div> Lumi Coffee</div>
+    <h1>Báo cáo chiến dịch “Mùa Đông Ấm Áp 2026”</h1>
+    <p>Hiệu quả quảng cáo đa kênh: chi phí, chuyển đổi và doanh thu theo tuần</p>
+    <div class="meta">
+      <span class="chip" id="chipRange">28/09 – 22/11/2026</span>
+      <span class="chip" id="chipWeeks">8 tuần</span>
+      <span class="chip" id="chipChannels">5 kênh</span>
+    </div>
+    <div class="toolbar">
+      <button class="btn" id="btnTheme" type="button">🌓 Đổi giao diện</button>
+      <button class="btn" type="button" onclick="window.print()">🖨️ In / Lưu PDF</button>
+      <label class="btn" for="fileInput">📂 Tải file CSV khác</label>
+      <input id="fileInput" type="file" accept=".csv,text/csv" hidden>
+    </div>
+  </header>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="card">
+    <h2>Doanh thu theo tuần</h2>
+    <p class="desc">Tổng doanh thu mỗi tuần, chia theo kênh quảng cáo. Di chuột vào cột để xem chi tiết.</p>
+    <div class="legend" id="legendWeekly"></div>
+    <div class="chart" id="chartWeekly"></div>
+  </section>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>Chi phí và doanh thu theo kênh</h2>
+      <p class="desc">Cột nhạt là chi phí, cột đậm là doanh thu mang về (toàn chiến dịch).</p>
+      <div class="legend" id="legendChannel"></div>
+      <div class="chart" id="chartChannel"></div>
+    </section>
+    <section class="card">
+      <h2>ROAS theo kênh</h2>
+      <p class="desc">Doanh thu thu về trên mỗi 1 đồng chi phí quảng cáo.</p>
+      <div class="chart" id="chartRoas"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Điểm nổi bật</h2>
+    <p class="desc">Tóm tắt nhanh từ số liệu chiến dịch.</p>
+    <div class="insights" id="insights"></div>
+  </section>
+
+  <section class="card">
+    <h2>Bảng tổng hợp theo kênh</h2>
+    <p class="desc">Số liệu chi tiết toàn chiến dịch.</p>
+    <div class="tbl-wrap"><table id="tbl"></table></div>
+  </section>
+
+  <footer>Số liệu mẫu, dùng cho mục đích minh họa · Báo cáo cập nhật ngày 19/11/2026</footer>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<!-- Dữ liệu chiến dịch (nội dung giống campaign_data.csv) -->
+<script type="text/csv" id="csvData">
+tuan,ngay_bat_dau,kenh,chi_phi_vnd,luot_hien_thi,luot_click,chuyen_doi,doanh_thu_vnd
+W1,2026-09-28,Facebook Ads,36968000,774311,11647,351,83095000
+W1,2026-09-28,Google Ads,29245000,504918,15179,504,131267000
+W1,2026-09-28,TikTok Ads,22981000,736289,8843,215,52726000
+W1,2026-09-28,Zalo Ads,11540000,289306,2410,63,15945000
+W1,2026-09-28,Email Marketing,3148000,148641,3472,143,37559000
+W2,2026-10-05,Facebook Ads,40759000,839693,14306,413,109961000
+W2,2026-10-05,Google Ads,35254000,589110,17290,572,138612000
+W2,2026-10-05,TikTok Ads,27359000,958815,10910,280,73418000
+W2,2026-10-05,Zalo Ads,14036000,344420,3014,71,16475000
+W2,2026-10-05,Email Marketing,3762000,191906,4637,182,47483000
+W3,2026-10-12,Facebook Ads,43485000,989239,15821,458,116416000
+W3,2026-10-12,Google Ads,38097000,589314,18501,696,177576000
+W3,2026-10-12,TikTok Ads,28649000,880594,10960,274,63773000
+W3,2026-10-12,Zalo Ads,15524000,361457,3428,82,21477000
+W3,2026-10-12,Email Marketing,3961000,198478,5259,202,53157000
+W4,2026-10-19,Facebook Ads,43567000,891179,14457,471,108981000
+W4,2026-10-19,Google Ads,42540000,757662,24622,895,227924000
+W4,2026-10-19,TikTok Ads,29204000,953650,11759,308,80601000
+W4,2026-10-19,Zalo Ads,15832000,389511,3697,104,26361000
+W4,2026-10-19,Email Marketing,4358000,201145,5816,265,64478000
+W5,2026-10-26,Facebook Ads,51169000,1075661,18052,580,141131000
+W5,2026-10-26,Google Ads,43647000,686544,21720,784,198875000
+W5,2026-10-26,TikTok Ads,33068000,1188159,16649,462,119472000
+W5,2026-10-26,Zalo Ads,15944000,401920,4369,121,27947000
+W5,2026-10-26,Email Marketing,4291000,229279,5934,245,58951000
+W6,2026-11-02,Facebook Ads,50012000,1060899,19809,646,151002000
+W6,2026-11-02,Google Ads,49200000,770327,24901,931,226190000
+W6,2026-11-02,TikTok Ads,37447000,1313307,16700,426,112302000
+W6,2026-11-02,Zalo Ads,19140000,458447,5069,147,35453000
+W6,2026-11-02,Email Marketing,4835000,246952,7242,303,73293000
+W7,2026-11-09,Facebook Ads,61941000,1272865,22997,826,222605000
+W7,2026-11-09,Google Ads,57583000,903703,33954,1264,305623000
+W7,2026-11-09,TikTok Ads,43918000,1477100,21627,569,144485000
+W7,2026-11-09,Zalo Ads,21372000,566865,5967,163,43774000
+W7,2026-11-09,Email Marketing,5766000,290284,9177,432,101577000
+W8,2026-11-16,Facebook Ads,54825000,1121421,20606,754,195138000
+W8,2026-11-16,Google Ads,48641000,822460,29378,1102,293603000
+W8,2026-11-16,TikTok Ads,41895000,1483763,20416,566,142455000
+W8,2026-11-16,Zalo Ads,19862000,531700,6089,180,43420000
+W8,2026-11-16,Email Marketing,5067000,254387,8070,353,93729000
+</script>
+
+<script>
+(function () {
+  const NS = 'http://www.w3.org/2000/svg';
+  const COLORS = ['--s1', '--s2', '--s3', '--s4', '--s5'];
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const nf = new Intl.NumberFormat('vi-VN');
+  const $ = id => document.getElementById(id);
+  let rows = [];
+
+  // ---------- Định dạng số ----------
+  function money(v) {
+    if (Math.abs(v) >= 1e9) return (v / 1e9).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + ' tỷ';
+    if (Math.abs(v) >= 1e6) return (v / 1e6).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' tr';
+    return nf.format(Math.round(v)) + ' đ';
+  }
+  const axisMoney = v => v === 0 ? '0' : (v >= 1e9 ? (v / 1e9).toLocaleString('vi-VN') + ' tỷ' : (v / 1e6).toLocaleString('vi-VN') + ' tr');
+  const pct = v => (v * 100).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + '%';
+  const x1 = v => v.toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + 'x';
+  const fmtDate = s => { const [y, m, d] = s.split('-'); return d + '/' + m; };
+
+  // ---------- CSV ----------
+  function parseCSV(text) {
+    const lines = text.replace(/^﻿/, '').trim().split(/\r?\n/).filter(Boolean);
+    const head = lines[0].split(',').map(h => h.trim());
+    return lines.slice(1).map(l => {
+      const c = l.split(','); const o = {};
+      head.forEach((h, i) => { const v = (c[i] || '').trim(); o[h] = v !== '' && !isNaN(v) ? +v : v; });
+      return o;
+    });
+  }
+
+  // ---------- Tổng hợp ----------
+  function sum(arr, k) { return arr.reduce((s, r) => s + (+r[k] || 0), 0); }
+  function aggregate() {
+    const channels = [...new Set(rows.map(r => r.kenh))];
+    const weeks = [...new Set(rows.map(r => r.tuan))];
+    const byCh = channels.map((c, i) => {
+      const rs = rows.filter(r => r.kenh === c);
+      const o = { name: c, color: COLORS[i % COLORS.length],
+        cost: sum(rs, 'chi_phi_vnd'), imp: sum(rs, 'luot_hien_thi'), clk: sum(rs, 'luot_click'),
+        conv: sum(rs, 'chuyen_doi'), rev: sum(rs, 'doanh_thu_vnd') };
+      o.roas = o.cost ? o.rev / o.cost : 0; o.ctr = o.imp ? o.clk / o.imp : 0;
+      o.cpa = o.conv ? o.cost / o.conv : 0;
+      return o;
+    });
+    const byWk = weeks.map(w => {
+      const rs = rows.filter(r => r.tuan === w);
+      return { name: w, date: rs[0] && rs[0].ngay_bat_dau, cost: sum(rs, 'chi_phi_vnd'), rev: sum(rs, 'doanh_thu_vnd'),
+        parts: channels.map(c => { const r = rs.find(x => x.kenh === c); return r ? +r.doanh_thu_vnd : 0; }) };
+    });
+    const tot = { cost: sum(rows, 'chi_phi_vnd'), imp: sum(rows, 'luot_hien_thi'), clk: sum(rows, 'luot_click'),
+      conv: sum(rows, 'chuyen_doi'), rev: sum(rows, 'doanh_thu_vnd') };
+    return { channels, weeks, byCh, byWk, tot };
+  }
+
+  // ---------- SVG helpers ----------
+  function el(name, attrs, parent) {
+    const e = document.createElementNS(NS, name);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function niceMax(v, n) {
+    const raw = v / n, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map(s => s * mag).find(s => s >= raw);
+    return { step, max: step * Math.ceil(v / step) };
+  }
+  // Cột bo góc trên 4px (vẽ từ đáy lên)
+  function topRounded(x, y, w, h, r) {
+    r = Math.min(r, w / 2, h);
+    return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
+  }
+  function rightRounded(x, y, w, h, r) {
+    r = Math.min(r, h / 2, w);
+    return `M${x},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h - r}Q${x + w},${y + h} ${x + w - r},${y + h}H${x}Z`;
+  }
+
+  // ---------- Tooltip ----------
+  const tip = $('tip');
+  function showTip(html, ev) {
+    tip.innerHTML = html; tip.style.opacity = 1; moveTip(ev);
+  }
+  function moveTip(ev) {
+    const pad = 14, w = tip.offsetWidth, h = tip.offsetHeight;
+    let x = ev.clientX + pad, y = ev.clientY + pad;
+    if (x + w > innerWidth - 8) x = ev.clientX - w - pad;
+    if (y + h > innerHeight - 8) y = ev.clientY - h - pad;
+    tip.style.left = Math.max(8, x) + 'px'; tip.style.top = Math.max(8, y) + 'px';
+  }
+  function hideTip() { tip.style.opacity = 0; }
+  const swatch = c => `<i class="sw" style="background:var(${c})"></i>`;
+
+  // ---------- Biểu đồ 1: cột chồng theo tuần ----------
+  function drawWeekly(A) {
+    const box = $('chartWeekly'); box.innerHTML = '';
+    const W = Math.max(320, box.clientWidth), H = W < 520 ? 280 : 340;
+    const m = { t: 24, r: 8, b: 44, l: 56 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Biểu đồ cột chồng doanh thu theo tuần' }, box);
+    const { step, max } = niceMax(Math.max(...A.byWk.map(w => w.rev)) * 1.05, 5);
+    const y = v => m.t + ih - (v / max) * ih;
+
+    for (let v = 0; v <= max + 1; v += step) {
+      el('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: css(v === 0 ? '--axis' : '--grid'), 'stroke-width': 1 }, svg);
+      const t = el('text', { x: m.l - 8, y: y(v) + 4, 'text-anchor': 'end', 'font-size': 11.5, fill: css('--muted') }, svg);
+      t.textContent = axisMoney(v);
+    }
+    const band = iw / A.byWk.length, bw = Math.min(56, band * 0.58);
+    const peak = A.byWk.reduce((a, b) => (b.rev > a.rev ? b : a));
+    A.byWk.forEach((wk, i) => {
+      const cx = m.l + band * i + band / 2, x = cx - bw / 2;
+      const g = el('g', {}, svg);
+      let acc = 0;
+      const lastIdx = wk.parts.reduce((li, v, k) => (v > 0 ? k : li), -1);
+      wk.parts.forEach((v, k) => {
+        if (!v) return;
+        const y0 = y(acc), y1 = y(acc + v), h = y0 - y1;
+        const gap = k === lastIdx ? 0 : 2; // khe hở 2px giữa các phân đoạn
+        if (k === lastIdx) el('path', { d: topRounded(x, y1, bw, h, 4), fill: css(A.byCh[k].color) }, g);
+        else el('rect', { x, y: y1 + gap / 2, width: bw, height: Math.max(0, h - gap), fill: css(A.byCh[k].color) }, g);
+        acc += v;
+      });
+      // nhãn tổng trên đỉnh cột
+      const lab = el('text', { x: cx, y: y(wk.rev) - 7, 'text-anchor': 'middle', 'font-size': W < 520 ? 10 : 11.5,
+        'font-weight': wk === peak ? 700 : 500, fill: css(wk === peak ? '--text-1' : '--text-2') }, svg);
+      lab.textContent = money(wk.rev).replace(' tr', '');
+      // trục x
+      const t1 = el('text', { x: cx, y: H - m.b + 18, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 600, fill: css('--text-2') }, svg);
+      t1.textContent = wk.name;
+      const t2 = el('text', { x: cx, y: H - m.b + 33, 'text-anchor': 'middle', 'font-size': 11, fill: css('--muted') }, svg);
+      t2.textContent = wk.date ? fmtDate(wk.date) : '';
+      // vùng hover lớn hơn cột
+      const hit = el('rect', { x: m.l + band * i, y: m.t, width: band, height: ih, fill: 'transparent', style: 'cursor:pointer' }, svg);
+      const html = () => `<div class="h">${wk.name} · từ ${fmtDate(wk.date)}</div>` +
+        A.byCh.map((c, k) => `<div class="r"><span>${swatch(c.color)}${c.name}</span><span>${money(wk.parts[k])}</span></div>`).reverse().join('') +
+        `<div class="r tot"><span>Tổng doanh thu</span><span>${money(wk.rev)}</span></div>` +
+        `<div class="r"><span>Chi phí</span><span>${money(wk.cost)}</span></div>` +
+        `<div class="r"><span>ROAS</span><span>${x1(wk.rev / wk.cost)}</span></div>`;
+      hit.addEventListener('mouseenter', e => { g.style.opacity = .85; showTip(html(), e); });
+      hit.addEventListener('mousemove', moveTip);
+      hit.addEventListener('mouseleave', () => { g.style.opacity = 1; hideTip(); });
+    });
+    $('legendWeekly').innerHTML = A.byCh.map(c => `<span>${swatch(c.color)}${c.name}</span>`).join('');
+  }
+
+  // ---------- Biểu đồ 2: cột nhóm chi phí vs doanh thu ----------
+  function drawChannel(A) {
+    const box = $('chartChannel'); box.innerHTML = '';
+    const W = Math.max(300, box.clientWidth), H = 300;
+    const m = { t: 22, r: 4, b: 40, l: 52 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Biểu đồ cột chi phí và doanh thu theo kênh' }, box);
+    const { step, max } = niceMax(Math.max(...A.byCh.map(c => c.rev)) * 1.08, 4);
+    const y = v => m.t + ih - (v / max) * ih;
+    for (let v = 0; v <= max + 1; v += step) {
+      el('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: css(v === 0 ? '--axis' : '--grid') }, svg);
+      const t = el('text', { x: m.l - 8, y: y(v) + 4, 'text-anchor': 'end', 'font-size': 11, fill: css('--muted') }, svg);
+      t.textContent = axisMoney(v);
+    }
+    const band = iw / A.byCh.length, bw = Math.min(26, band * 0.32);
+    A.byCh.forEach((c, i) => {
+      const cx = m.l + band * i + band / 2;
+      const col = css(c.color);
+      const g = el('g', {}, svg);
+      el('path', { d: topRounded(cx - bw - 1, y(c.cost), bw, y(0) - y(c.cost), 4), fill: col, 'fill-opacity': .32 }, g);
+      el('path', { d: topRounded(cx + 1, y(c.rev), bw, y(0) - y(c.rev), 4), fill: col }, g);
+      const lab = el('text', { x: cx + 1 + bw / 2, y: y(c.rev) - 6, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 600, fill: css('--text-1') }, svg);
+      lab.textContent = (c.rev / 1e6).toLocaleString('vi-VN', { maximumFractionDigits: 0 });
+      const short = c.name.replace(' Ads', '').replace(' Marketing', '');
+      const t = el('text', { x: cx, y: H - m.b + 18, 'text-anchor': 'middle', 'font-size': 12, fill: css('--text-2') }, svg);
+      t.textContent = short;
+      const hit = el('rect', { x: m.l + band * i, y: m.t, width: band, height: ih, fill: 'transparent', style: 'cursor:pointer' }, svg);
+      const html = `<div class="h">${swatch(c.color)} ${c.name}</div>
+        <div class="r"><span>Chi phí</span><span>${money(c.cost)}</span></div>
+        <div class="r"><span>Doanh thu</span><span>${money(c.rev)}</span></div>
+        <div class="r"><span>Lợi nhuận gộp QC</span><span>${money(c.rev - c.cost)}</span></div>
+        <div class="r tot"><span>ROAS</span><span>${x1(c.roas)}</span></div>`;
+      hit.addEventListener('mouseenter', e => { g.style.opacity = .85; showTip(html, e); });
+      hit.addEventListener('mousemove', moveTip);
+      hit.addEventListener('mouseleave', () => { g.style.opacity = 1; hideTip(); });
+    });
+    $('legendChannel').innerHTML =
+      `<span><i class="sw" style="background:var(--text-2);opacity:.32"></i>Chi phí</span>` +
+      `<span><i class="sw" style="background:var(--text-2)"></i>Doanh thu</span>` +
+      `<span style="color:var(--muted)">Màu theo kênh, đơn vị: triệu đồng</span>`;
+  }
+
+  // ---------- Biểu đồ 3: thanh ngang ROAS ----------
+  function drawRoas(A) {
+    const box = $('chartRoas'); box.innerHTML = '';
+    const data = [...A.byCh].sort((a, b) => b.roas - a.roas);
+    const W = Math.max(280, box.clientWidth), rowH = 44, m = { t: 6, r: 48, b: 26, l: 104 };
+    const H = m.t + m.b + rowH * data.length;
+    const iw = W - m.l - m.r;
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Biểu đồ ROAS theo kênh' }, box);
+    const { step, max } = niceMax(Math.max(...data.map(d => d.roas)), 4);
+    const x = v => m.l + (v / max) * iw;
+    for (let v = 0; v <= max + 1e-9; v += step) {
+      el('line', { x1: x(v), x2: x(v), y1: m.t, y2: H - m.b, stroke: css(v === 0 ? '--axis' : '--grid') }, svg);
+      const t = el('text', { x: x(v), y: H - 8, 'text-anchor': 'middle', 'font-size': 11, fill: css('--muted') }, svg);
+      t.textContent = v + 'x';
+    }
+    data.forEach((d, i) => {
+      const yc = m.t + rowH * i + rowH / 2, bh = 18;
+      const t = el('text', { x: m.l - 10, y: yc + 4, 'text-anchor': 'end', 'font-size': 12.5, fill: css('--text-2') }, svg);
+      t.textContent = d.name.replace(' Marketing', '');
+      const bar = el('path', { d: rightRounded(x(0), yc - bh / 2, x(d.roas) - x(0), bh, 4), fill: css(d.color) }, svg);
+      const v = el('text', { x: x(d.roas) + 8, y: yc + 4, 'font-size': 12.5, 'font-weight': 700, fill: css('--text-1') }, svg);
+      v.textContent = x1(d.roas);
+      const hit = el('rect', { x: 0, y: yc - rowH / 2, width: W, height: rowH, fill: 'transparent', style: 'cursor:pointer' }, svg);
+      const html = `<div class="h">${swatch(d.color)} ${d.name}</div>
+        <div class="r"><span>ROAS</span><span>${x1(d.roas)}</span></div>
+        <div class="r"><span>Chi phí / chuyển đổi</span><span>${money(d.cpa)}</span></div>
+        <div class="r"><span>Tỷ lệ click (CTR)</span><span>${pct(d.ctr)}</span></div>`;
+      hit.addEventListener('mouseenter', e => { bar.style.opacity = .85; showTip(html, e); });
+      hit.addEventListener('mousemove', moveTip);
+      hit.addEventListener('mouseleave', () => { bar.style.opacity = 1; hideTip(); });
+    });
+  }
+
+  // ---------- KPI, insight, bảng ----------
+  function drawKpis(A) {
+    const T = A.tot, roas = T.rev / T.cost;
+    const half = Math.floor(A.byWk.length / 2);
+    const first = A.byWk.slice(0, half).reduce((s, w) => s + w.rev, 0);
+    const second = A.byWk.slice(half).reduce((s, w) => s + w.rev, 0);
+    const growth = first ? (second - first) / first : 0;
+    const items = [
+      ['Tổng doanh thu', money(T.rev), `<b>▲ ${pct(growth)}</b> nửa sau so với nửa đầu`],
+      ['Tổng chi phí QC', money(T.cost), `${nf.format(A.weeks.length)} tuần, ${A.channels.length} kênh`],
+      ['ROAS trung bình', x1(roas), `1đ quảng cáo → ${roas.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}đ doanh thu`],
+      ['Đơn hàng (chuyển đổi)', nf.format(T.conv), `Chi phí/đơn: ${money(T.cost / T.conv)}`],
+      ['Lượt hiển thị', (T.imp / 1e6).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' triệu', `CTR: ${pct(T.clk / T.imp)} · ${nf.format(T.clk)} click`]
+    ];
+    $('kpis').innerHTML = items.map(([l, v, s]) => `<div class="kpi"><div class="lbl">${l}</div><div class="val">${v}</div><div class="sub">${s}</div></div>`).join('');
+  }
+
+  function drawInsights(A) {
+    const best = [...A.byCh].sort((a, b) => b.roas - a.roas)[0];
+    const top = [...A.byCh].sort((a, b) => b.rev - a.rev)[0];
+    const peak = A.byWk.reduce((a, b) => (b.rev > a.rev ? b : a));
+    const share = top.rev / A.tot.rev;
+    $('insights').innerHTML = [
+      ['Kênh hiệu quả nhất', `<b>${best.name}</b> đạt ROAS <b>${x1(best.roas)}</b>, mỗi 1đ chi ra mang về ${best.roas.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}đ.`],
+      ['Đóng góp lớn nhất', `<b>${top.name}</b> mang về <b>${money(top.rev)}</b>, chiếm ${pct(share)} tổng doanh thu.`],
+      ['Tuần cao điểm', `<b>${peak.name}</b> (từ ${fmtDate(peak.date)}) đạt <b>${money(peak.rev)}</b>, cao nhất chiến dịch.`]
+    ].map(([t, d]) => `<div class="ins"><div class="t">${t}</div><div class="d">${d}</div></div>`).join('');
+  }
+
+  function drawTable(A) {
+    const T = A.tot;
+    const row = (name, c, sw) => `<tr><td>${sw ? swatch(sw) + ' ' : ''}${name}</td><td>${nf.format(c.cost)}</td><td>${nf.format(c.imp)}</td>
+      <td>${nf.format(c.clk)}</td><td>${pct(c.clk / c.imp)}</td><td>${nf.format(c.conv)}</td><td>${nf.format(c.rev)}</td><td>${x1(c.rev / c.cost)}</td></tr>`;
+    $('tbl').innerHTML = `<thead><tr><th>Kênh</th><th>Chi phí (đ)</th><th>Hiển thị</th><th>Click</th><th>CTR</th><th>Đơn hàng</th><th>Doanh thu (đ)</th><th>ROAS</th></tr></thead>
+      <tbody>${A.byCh.map(c => row(c.name, c, c.color)).join('')}</tbody>
+      <tfoot>${row('Tổng cộng', T)}</tfoot>`;
+  }
+
+  function renderHeader(A) {
+    const dates = A.byWk.map(w => w.date).filter(Boolean).sort();
+    if (dates.length) {
+      const end = new Date(dates[dates.length - 1]); end.setDate(end.getDate() + 6);
+      const e = String(end.getDate()).padStart(2, '0') + '/' + String(end.getMonth() + 1).padStart(2, '0') + '/' + end.getFullYear();
+      $('chipRange').textContent = fmtDate(dates[0]) + ' – ' + e;
+    }
+    $('chipWeeks').textContent = A.weeks.length + ' tuần';
+    $('chipChannels').textContent = A.channels.length + ' kênh';
+  }
+
+  let A;
+  function render() {
+    if (!rows.length) return;
+    A = aggregate();
+    renderHeader(A); drawKpis(A); drawInsights(A); drawTable(A);
+    drawCharts();
+  }
+  function drawCharts() { drawWeekly(A); drawChannel(A); drawRoas(A); }
+
+  // ---------- Khởi chạy ----------
+  rows = parseCSV($('csvData').textContent);
+  render();
+
+  let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(drawCharts, 120); });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawCharts);
+
+  $('btnTheme').addEventListener('click', () => {
+    const root = document.documentElement;
+    const isDark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = isDark ? 'light' : 'dark';
+    drawCharts();
+  });
+
+  $('fileInput').addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      const r = parseCSV(rd.result);
+      if (!r.length || !('kenh' in r[0]) || !('doanh_thu_vnd' in r[0])) { alert('File CSV không đúng định dạng cột mẫu.'); return; }
+      rows = r; render();
+    };
+    rd.readAsText(f, 'utf-8');
+  });
+})();
+</script>
+</body>
+</html>
